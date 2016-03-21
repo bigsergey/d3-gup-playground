@@ -1,21 +1,28 @@
-import {createVNode} from './vnode';
+import {h} from './vnode';
 
-export function gup(selection, data, vNode) {
-  const _node = selection.selectAll(vNode.getSelector()).data(data);
-  const _nodeEnter = _node.enter().append(vNode.getTagName());
-  vNode.ensureSelector(_nodeEnter);
-  _nodeEnter.attr(vNode.getStaticAttrs());
-  _node.attr(vNode.getDynamicAttrs());
+export function gup(parent, data, vNode) {
+  const selection = parent.selectAll(vNode.getSelector()).data(data);
+  const enterSelection = selection.enter().append(vNode.getTagName());
+  vNode.ensureSelector(enterSelection);
+  enterSelection.attr(vNode.getStaticAttrs());
+  selection.attr(vNode.getDynamicAttrs());
 
-  vNode.getChildren().forEach((child) => child(_node));
+  vNode.getStaticChildren()
+    .forEach((child) =>
+      enterSelection
+        .append(child.getTagName())
+        .attr(child.getStaticAttrs())
+    );
 
-  const _nodeExit = _node.exit();
-  _nodeExit.remove();
+  vNode.getBoundChildren()
+    .forEach((child) => child(selection));
+
+  const exitSelection = selection.exit();
+  exitSelection.remove();
+
+  return { selection, enterSelection, exitSelection };
 }
 
 export const gup1 = (data, content) =>
   (selection) =>
     gup(selection, data, content);
-
-export const div = createVNode('div');
-export const span = createVNode('span');

@@ -1,32 +1,53 @@
 import {is} from 'ramda';
 
+const isFunction = is(Function);
+
 function parseAttributes(attrs) {
   return {
     dynamic: {
-      attrs: {},
+      attributes: {},
       style: {},
       textContent: '',
-      classList: []
+      classList: [],
+      id: null
     },
     static: {
-      attrs: {},
+      attributes: {},
       style: {},
       textContent: '',
-      classList: []
+      classList: [],
+      id: null
     }
   }
 }
 
+// TODO: it's dummy implementation
+function parseSelector(selector) {
+  const splitByHash = selector.split('#');
+  const id = splitByHash[1] || null;
+  const splitByDots = splitByHash[0].split('.');
+  const tagName = splitByDots[0] === '' ? 'div' : splitByDots[0];
+  const classList = splitByDots.slice(1);
+  return {tagName, classList, id};
+}
+
+function parseChildren(children) {
+  const staticChildren = children.filter((child) => isVNode(child));
+  const boundChildren = children.filter((child) => !isVNode(child));
+  return {boundChildren, staticChildren};
+}
+
 class VNode {
-  constructor(tagName, selector, attributes, children) {
-    // assert selector for classes
-    if (!/\.[A-z\-]+/.test(selector)) {
-      throw 'handles only class names as selectors';
-    }
-    this.className = selector.substring(1);
+  constructor(selector, attributes, children) {
+    this.selector = selector;
+    const {tagName, classList, id} = parseSelector(selector);
+    this.classList = classList;
     this.tagName = tagName;
+    this.id = id;
     this.attributes = parseAttributes(attributes);
-    this.children = children;
+    const {staticChildren, boundChildren} = parseChildren(children);
+    this.staticChildren = staticChildren;
+    this.boundChildren = boundChildren;
   }
 
   getTagName() {
@@ -34,11 +55,13 @@ class VNode {
   }
 
   getSelector() {
-    return `.${this.className}`
+    return this.selector;
   }
 
   ensureSelector(selection) {
-    selection.classed(this.className, true);
+    selection
+      .classed(this.classList.join(' '), true)
+      .attr('id', this.id);
   }
 
   getStaticAttrs() {
@@ -49,11 +72,21 @@ class VNode {
     return this.attributes.dynamic.attrs;
   }
 
-  getChildren() {
-    return this.children;
+  getStaticChildren() {
+    return this.staticChildren;
+  }
+
+  getBoundChildren() {
+    return this.boundChildren;
   }
 }
 
-export const createVNode = (tagName) =>
-  (selector, attrs, ...children) =>
-    new VNode(tagName, selector, attrs, children);
+const isVNode = is(VNode);
+
+export const h = (selector, attributes, ...content) => {
+  const hasAttrs = !isFunction(attributes) && !isVNode(attributes);
+  return new VNode(
+    selector,
+    hasAttrs ? attributes : {},
+    hasAttrs ? content : [attributes, ...content]);
+};

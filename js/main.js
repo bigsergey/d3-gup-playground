@@ -1,14 +1,15 @@
 import 'babel-polyfill';
 import {selectAll} from 'd3';
-import {gup, gup1, div, span} from './gup';
+import {gup, gup1} from './gup';
+import {h} from './vnode';
 
 const app = selectAll('#app');
-const config = {color: 'red'};
+const config = {color: 'blue'};
 
 gup(app, [[1, 2, 3, 4]],
-  div('.chart', {
+  h('div.chart2', {
     'data-test': config.color
-  }, gup1((d) => d, span('.bar', {
+  }, h('span.legend', {}, 'legenda'), gup1((d) => d, h('span.bar', {
       text: (d) => `data: ${d}`
     }
   ))));
