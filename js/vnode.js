@@ -1,22 +1,28 @@
-import {is} from 'ramda';
+import {is, pickBy, omit} from 'ramda';
 
 const isFunction = is(Function);
 
-function parseAttributes(attrs) {
+function parseAttributes(attributes) {
+  const functionPicker = pickBy((v) => isFunction(v));
+  const scalarPicker = pickBy((v) => !isFunction(v));
+
+  const {style, className, textContent, id} = attributes;
+  const attrs = omit(['style', 'className', 'id', 'text'], attributes);
+
   return {
-    dynamic: {
-      attributes: {},
-      style: {},
-      textContent: '',
-      classList: [],
-      id: null
+    boundAttributes: {
+      attributes: functionPicker(attrs),
+      style: functionPicker(style || {}),
+      textContent: isFunction(textContent) ? textContent : undefined,
+      className: isFunction(className) ? className : undefined,
+      id: isFunction(id) ? id : undefined
     },
-    static: {
-      attributes: {},
-      style: {},
-      textContent: '',
-      classList: [],
-      id: null
+    constantAttributes: {
+      attributes: scalarPicker(attrs),
+      style: scalarPicker(style || {}),
+      textContent: !isFunction(textContent) ? textContent : undefined,
+      className: !isFunction(className) ? className : undefined,
+      id: !isFunction(id) ? id : undefined
     }
   }
 }
@@ -24,30 +30,26 @@ function parseAttributes(attrs) {
 // TODO: it's dummy implementation
 function parseSelector(selector) {
   const splitByHash = selector.split('#');
-  const id = splitByHash[1] || null;
   const splitByDots = splitByHash[0].split('.');
   const tagName = splitByDots[0] === '' ? 'div' : splitByDots[0];
   const classList = splitByDots.slice(1);
-  return {tagName, classList, id};
+  return {tagName, classList, id: splitByHash[1] || null};
 }
 
-function parseChildren(children) {
-  const staticChildren = children.filter((child) => isVNode(child));
-  const boundChildren = children.filter((child) => !isVNode(child));
-  return {boundChildren, staticChildren};
-}
+const parseChildren = (children) => ({
+  boundChildren: children.filter((child) => !isVNode(child)),
+  constantChildren: children.filter((child) => isVNode(child)),
+  textChildren: children.filter(is(String))
+});
 
 class VNode {
   constructor(selector, attributes, children) {
-    this.selector = selector;
-    const {tagName, classList, id} = parseSelector(selector);
-    this.classList = classList;
-    this.tagName = tagName;
-    this.id = id;
-    this.attributes = parseAttributes(attributes);
-    const {staticChildren, boundChildren} = parseChildren(children);
-    this.staticChildren = staticChildren;
-    this.boundChildren = boundChildren;
+    Object.assign(this,
+      {selector},
+      parseSelector(selector),
+      parseAttributes(attributes),
+      parseChildren(children)
+    );
   }
 
   getTagName() {
@@ -64,20 +66,24 @@ class VNode {
       .attr('id', this.id);
   }
 
-  getStaticAttrs() {
-    return this.attributes.static.attrs;
+  getBoundAttributes() {
+    return this.boundAttributes.attributes;
   }
 
-  getDynamicAttrs() {
-    return this.attributes.dynamic.attrs;
+  getConstantAttributes() {
+    return this.constantAttributes.attributes;
   }
 
-  getStaticChildren() {
-    return this.staticChildren;
+  getConstantChildren() {
+    return this.constantChildren;
   }
 
   getBoundChildren() {
     return this.boundChildren;
+  }
+
+  getTextChildren() {
+    return this.textChildren;
   }
 }
 
