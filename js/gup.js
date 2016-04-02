@@ -1,27 +1,62 @@
 import {h} from './vnode';
+import {curry} from 'ramda';
+import {
+  thread,
+  selectAll,
+  data,
+  data2,
+  enter,
+  exit,
+  append,
+  classed,
+  attr,
+  attr2,
+  text,
+  remove
+} from './d3-fun';
 
-export function gup(parent, data, vNode) {
-  const selection = parent.selectAll(vNode.getSelector()).data(data);
-  const enterSelection = selection.enter().append(vNode.getTagName());
-  vNode.ensureSelector(enterSelection);
-  enterSelection.attr(vNode.getConstantAttributes());
-  enterSelection.text(vNode.getTextChildren().join(''));
-  selection.attr(vNode.getBoundAttributes());
+const ensureSelector = curry(
+  (vNode, selection) => thread(
+    selection,
+    classed(vNode.getClassList().join(' '), true),
+    attr2('id', vNode.getId())
+  )
+);
+
+export function gup(parent, nodeData, vNode) {
+  const selection = thread(
+    parent,
+    selectAll(vNode.getSelector()),
+    data(nodeData)
+  );
+
+  const enterSelection = thread(
+    selection,
+    enter,
+    append(vNode.getTagName()),
+    ensureSelector(vNode),
+    attr(vNode.getConstantAttributes()),
+    text(vNode.getTextChildren().join(''))
+  );
+
+  attr(vNode.getBoundAttributes(), selection);
 
   vNode.getConstantChildren()
     .forEach((child) =>
-      enterSelection
-        .append(child.getTagName())
-        .attr(child.getConstantChildren())
+      thread(enterSelection,
+        append(child.getTagName()),
+        attr(child.getConstantChildren())
+      )
     );
 
   vNode.getBoundChildren()
     .forEach((child) => child(selection));
 
-  const exitSelection = selection.exit();
-  exitSelection.remove();
+  // todo: remove should go after middlewares
+  const exitSelection = exit(selection);
+  remove(exitSelection);
 
-  return { selection, enterSelection, exitSelection };
+  return {selection, enterSelection, exitSelection};
 }
 
 export const gup1 = (data, content) =>

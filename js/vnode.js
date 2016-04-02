@@ -60,10 +60,12 @@ class VNode {
     return this.selector;
   }
 
-  ensureSelector(selection) {
-    selection
-      .classed(this.classList.join(' '), true)
-      .attr('id', this.id);
+  getId() {
+    return this.id;
+  }
+
+  getClassList() {
+    return this.classList;
   }
 
   getBoundAttributes() {
