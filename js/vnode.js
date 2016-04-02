@@ -1,28 +1,24 @@
 import {is, pickBy, omit} from 'ramda';
 
 const isFunction = is(Function);
+const isArray = is(Array);
 
 function parseAttributes(attributes) {
   const functionPicker = pickBy((v) => isFunction(v));
   const scalarPicker = pickBy((v) => !isFunction(v));
 
-  const {style, className, textContent, id} = attributes;
-  const attrs = omit(['style', 'className', 'id', 'text'], attributes);
+  const {style, textContent} = attributes;
+  const attrs = omit(['style', 'textContent'], attributes);
 
   return {
     boundAttributes: {
       attributes: functionPicker(attrs),
       style: functionPicker(style || {}),
-      textContent: isFunction(textContent) ? textContent : undefined,
-      className: isFunction(className) ? className : undefined,
-      id: isFunction(id) ? id : undefined
+      textContent: isFunction(textContent) ? textContent : undefined
     },
     constantAttributes: {
       attributes: scalarPicker(attrs),
-      style: scalarPicker(style || {}),
-      textContent: !isFunction(textContent) ? textContent : undefined,
-      className: !isFunction(className) ? className : undefined,
-      id: !isFunction(id) ? id : undefined
+      style: scalarPicker(style || {})
     }
   }
 }
@@ -68,12 +64,24 @@ class VNode {
     return this.classList;
   }
 
+  getConstantAttributes() {
+    return this.constantAttributes.attributes;
+  }
+
   getBoundAttributes() {
     return this.boundAttributes.attributes;
   }
 
-  getConstantAttributes() {
-    return this.constantAttributes.attributes;
+  getConstantStyles() {
+    return this.constantAttributes.style;
+  }
+
+  getBoundStyles() {
+    return this.boundAttributes.style;
+  }
+
+  getBoundTextContent() {
+    return this.boundAttributes.textContent;
   }
 
   getConstantChildren() {

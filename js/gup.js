@@ -11,6 +11,8 @@ import {
   classed,
   attr,
   attr2,
+  style,
+  style2,
   text,
   remove
 } from './d3-fun';
@@ -23,6 +25,16 @@ const ensureSelector = curry(
   )
 );
 
+const appendVNode = (vNode) =>
+  (selection) =>
+    thread(
+      selection,
+      append(vNode.getTagName()),
+      attr(vNode.getConstantAttributes()),
+      style(vNode.getConstantStyles()),
+      text(vNode.getTextChildren().join(''))
+    );
+
 export function gup(parent, nodeData, vNode) {
   const selection = thread(
     parent,
@@ -33,19 +45,24 @@ export function gup(parent, nodeData, vNode) {
   const enterSelection = thread(
     selection,
     enter,
-    append(vNode.getTagName()),
-    ensureSelector(vNode),
-    attr(vNode.getConstantAttributes()),
-    text(vNode.getTextChildren().join(''))
+    appendVNode(vNode),
+    ensureSelector(vNode)
   );
 
-  attr(vNode.getBoundAttributes(), selection);
+  thread(
+    selection,
+    attr(vNode.getBoundAttributes()),
+    style(vNode.getBoundStyles()),
+    text(vNode.getBoundTextContent())
+  );
 
   vNode.getConstantChildren()
     .forEach((child) =>
-      thread(enterSelection,
-        append(child.getTagName()),
-        attr(child.getConstantChildren())
+      thread(
+        enterSelection,
+        appendVNode(child),
+        attr2('id', child.getId()),
+        classed(child.getClassList().join(' '), true)
       )
     );
 

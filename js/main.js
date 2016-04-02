@@ -11,8 +11,12 @@ gup(app, [[2, 3, 4]],
       'data-test': config.color
     },
     h('span.legend', {}, 'legenda'),
-    gup1((d) => d, h('span.bar', {
-        text: (d) => `data: ${d}`
+    gup1((d) => d, h('div.bar', {
+        textContent: (d) => `data: ${d}`,
+        style: {
+          'background-color': 'red',
+          width: (d) => `${d * 100}px`
+        }
       }
     ))
   )
