@@ -1,5 +1,5 @@
 import {h} from './vnode';
-import {curry} from 'ramda';
+import {curry, identity} from 'ramda';
 import {
   thread,
   selectAll,
@@ -17,7 +17,7 @@ import {
   remove
 } from './d3-fun';
 
-const ensureSelector = curry(
+const setSelector = curry(
   (vNode, selection) => thread(
     selection,
     classed(vNode.getClassList().join(' '), true),
@@ -35,7 +35,12 @@ const appendVNode = (vNode) =>
       text(vNode.getTextChildren().join(''))
     );
 
-export function gup(parent, nodeData, vNode) {
+export function gup(
+  parent,
+  nodeData,
+  vNode,
+  {enterTransform = identity, exitTransform = identity} = {}
+) {
   const selection = thread(
     parent,
     selectAll(vNode.getSelector()),
@@ -46,7 +51,8 @@ export function gup(parent, nodeData, vNode) {
     selection,
     enter,
     appendVNode(vNode),
-    ensureSelector(vNode)
+    setSelector(vNode),
+    enterTransform
   );
 
   thread(
@@ -61,19 +67,21 @@ export function gup(parent, nodeData, vNode) {
       thread(
         enterSelection,
         appendVNode(child),
-        attr2('id', child.getId()),
-        classed(child.getClassList().join(' '), true)
+        setSelector(child)
       )
     );
 
   vNode.getBoundChildren()
     .forEach((child) => child(selection));
 
-  // todo: remove should go after middlewares
-  const exitSelection = exit(selection);
-  remove(exitSelection);
+  thread(
+    selection,
+    exit,
+    exitTransform,
+    remove
+  );
 
-  return {selection, enterSelection, exitSelection};
+  return selection;
 }
 
 export const gup1 = (data, content) =>
