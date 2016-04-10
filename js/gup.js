@@ -1,5 +1,5 @@
 import {h} from './vnode';
-import {curry, identity} from 'ramda';
+import {curry, identity, is} from 'ramda';
 import {
   thread,
   selectAll,
@@ -12,10 +12,12 @@ import {
   attr,
   attr2,
   style,
-  style2,
   text,
   remove
 } from './d3-fun';
+
+export const gup = (parent, ...fns) =>
+  fns.forEach((fn) => fn(parent));
 
 const setSelector = curry(
   (vNode, selection) => thread(
@@ -35,55 +37,55 @@ const appendVNode = (vNode) =>
       text(vNode.getTextChildren().join(''))
     );
 
-export function gup(
-  parent,
-  nodeData,
-  vNode,
-  {enterTransform = identity, exitTransform = identity} = {}
-) {
-  const selection = thread(
-    parent,
-    selectAll(vNode.getSelector()),
-    data(nodeData)
-  );
+export const bind = (nodeData, vNode, xf) =>
+  _bind(data(nodeData), vNode, xf);
 
-  const enterSelection = thread(
-    selection,
-    enter,
-    appendVNode(vNode),
-    setSelector(vNode),
-    enterTransform
-  );
+export const bind2 = (nodeData, keySelector, vNode, xf) =>
+  _bind(data2(nodeData, keySelector), vNode, xf);
 
-  thread(
-    selection,
-    attr(vNode.getBoundAttributes()),
-    style(vNode.getBoundStyles()),
-    text(vNode.getBoundTextContent())
-  );
+export const _bind =
+  (dataFn, vNode, {enterTransform = identity, exitTransform = identity} = {}) =>
+    function(parent) {
+      const selection = thread(
+        parent,
+        selectAll(vNode.getSelector()),
+        dataFn
+      );
 
-  vNode.getConstantChildren()
-    .forEach((child) =>
+      const enterSelection = thread(
+        selection,
+        enter,
+        appendVNode(vNode),
+        setSelector(vNode)
+      );
+
+      enterTransform(enterSelection);
+
       thread(
-        enterSelection,
-        appendVNode(child),
-        setSelector(child)
-      )
-    );
+        selection,
+        attr(vNode.getBoundAttributes()),
+        style(vNode.getBoundStyles()),
+        text(vNode.getBoundTextContent())
+      );
 
-  vNode.getBoundChildren()
-    .forEach((child) => child(selection));
+      vNode.getConstantChildren()
+        .forEach((child) =>
+          thread(
+            enterSelection,
+            appendVNode(child),
+            setSelector(child)
+          )
+        );
 
-  thread(
-    selection,
-    exit,
-    exitTransform,
-    remove
-  );
+      vNode.getBoundChildren()
+        .forEach((child) => child(selection));
 
-  return selection;
-}
+      thread(
+        selection,
+        exit,
+        exitTransform,
+        remove
+      );
 
-export const gup1 = (data, content) =>
-  (selection) =>
-    gup(selection, data, content);
+      return selection;
+    };
