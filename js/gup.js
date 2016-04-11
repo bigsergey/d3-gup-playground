@@ -37,13 +37,7 @@ const appendVNode = (vNode) =>
       text(vNode.getTextChildren().join(''))
     );
 
-export const bind = (nodeData, vNode, xf) =>
-  _bind(data(nodeData), vNode, xf);
-
-export const bind2 = (nodeData, keySelector, vNode, xf) =>
-  _bind(data2(nodeData, keySelector), vNode, xf);
-
-export const _bind =
+const _bind =
   (dataFn, vNode, {enterTransform = identity, exitTransform = identity} = {}) =>
     function(parent) {
       const selection = thread(
@@ -89,3 +83,10 @@ export const _bind =
 
       return selection;
     };
+
+export const bind = (nodeData, vNode, xf) =>
+  _bind(data(nodeData), vNode, xf);
+
+export const bind2 = (nodeData, keySelector, vNode, xf) =>
+  _bind(data2(nodeData, keySelector), vNode, xf);
+
