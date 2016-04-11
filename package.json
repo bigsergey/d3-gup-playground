@@ -17,11 +17,14 @@
     "presets": [
       "es2015"
     ],
-    "plugins": ["transform-object-rest-spread"]
+    "plugins": [
+      "transform-object-rest-spread"
+    ]
   },
   "author": "Axel Rauschmayer",
   "license": "MIT",
   "dependencies": {
-    "d3": "^3.5.16"
+    "d3": "^3.5.16",
+    "ramda": "^0.21.0"
   }
 }
