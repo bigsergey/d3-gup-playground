@@ -27,6 +27,8 @@ var chartNode = div(
 const chart = bind(
   [[2, 3, 4]],
   chartNode,
-  transition('fill', {start: 'red', end: 'blue'}, 1000) );
+  // this transition works but has no sens on the div
+  transition('fill', {start: 'red', end: 'blue'}, 1000)
+);
 
 gup(selectAll('#app'), chart);
