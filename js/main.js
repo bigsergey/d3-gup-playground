@@ -2,13 +2,8 @@ import 'babel-polyfill';
 import {selectAll} from 'd3';
 import {gup, bind} from './gup';
 import {call, transition} from './gup-helpers';
+import {div, span} from './gup-tags';
 import {h} from './vnode';
-
-const div = (selector, attrs, ...children) =>
-  h(`div${selector}`, attrs, ...children);
-
-const span = (selector, attrs, ...children) =>
-  h(`span${selector}`, attrs, ...children);
 
 const config = {color: 'blue'};
 
